@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "chrome-bookmark",
+  "version": "0.1.0",
+  "description": "谷歌增强书签-威力加强版v1",
+  "icons": {
+    "16": "images/logo.png",
+    "32": "images/logo.png",
+    "48": "images/logo.png",
+    "128": "images/logo.png"
+  },
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "action": {
+    "default_title": "我的书签",
+    "default_popup": "index.html",
+    "default_icon": {
+      "16": "images/logo.png",
+      "32": "images/logo.png",
+      "48": "images/logo.png",
+      "128": "images/logo.png"
+    }
+  },
+  "permissions": [
+    "scripting",
+    "storage",
+    "bookmarks",
+    "tabs",
+    "activeTab"
+  ]
+}
