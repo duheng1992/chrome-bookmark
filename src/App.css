@@ -1,5 +1,16 @@
 .container {
-    min-width: 400px;
+    min-width: 600px;
     min-height: 200px;
     padding: 12px;
+}
+
+.segmented {
+    margin-bottom: 8px;
+}
+
+.list-row,
+.list-col {
+    width: 100%;
+    max-height: 600px;
+    overflow-y: auto;
 }

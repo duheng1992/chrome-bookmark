@@ -10,7 +10,8 @@
     "128": "images/logo.png"
   },
   "background": {
-    "service_worker": "src/background.js"
+    "service_worker": "src/background.js",
+    "persistent": false
   },
   "action": {
     "default_title": "我的书签",
