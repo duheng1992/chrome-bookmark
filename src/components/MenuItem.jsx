@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Col, Row, Button, Space, Popconfirm, Input, Tag, message, Select } from 'antd';
+import { useState, useEffect } from 'react'
+import { Col, Row, Button, Space, Popconfirm, Tag } from 'antd';
 import { TagOutlined } from '@ant-design/icons';
 
 import { saveTagForBookmark } from '../utils';
@@ -12,7 +12,7 @@ const tagStyle = {
   transition: 'unset', // Prevent element from shaking after drag
 };
 
-function MenuItem({ id, label, tagStoreMap, callback }) {
+function MenuItem({ id, label, tagStoreMap = {}, isDir, callback }) {
   const [tagValues, setTagValues] = useState([]);
 
   const onTagSelect = tags => {
@@ -25,7 +25,6 @@ function MenuItem({ id, label, tagStoreMap, callback }) {
     //   return;
     // }
     saveTagForBookmark(id, [...tagValues]);
-    callback && callback();
   }
 
   const closeAdd = () => {
@@ -41,39 +40,49 @@ function MenuItem({ id, label, tagStoreMap, callback }) {
     e.stopPropagation();
   }
 
+  useEffect(() => {
+    // 当存储变化时，再更新列表
+    chrome.storage.onChanged.addListener(function() {  
+      // alert(JSON.stringify(changes))
+      callback && callback();
+    })
+  }, []);
+
   return <Row key={id}>
     <Col span={21}>
       {label || '-'}
-      {tagStoreMap[id] ? <Space className='ml-4' size={1}>
+      {!isDir && tagStoreMap[id] ? <Space className='ml-4' size={1}>
         {(tagStoreMap[id] || []).map(tag => {
           return <Tag key={tag} color={tag} style={tagStyle}>{tagLevelColorMap[tag]}</Tag>
         })}
       </Space> : null}
     </Col>
-    <Col span={3}>
-      <Space wrap>
-        <Popconfirm
-          title="添加标签"
-          icon={null}
-          description={
-            <TagFilter callback={values => {
-              // 设置标签
-              onTagSelect(values);
-            }} />
-          }
-          onConfirm={() => addTag(id, label)}
-          onCancel={closeAdd}
-          // onOpenChange={handleAddTagOpenChange}
-          onPopupClick={e => e.stopPropagation()}
-          okText="确定"
-          cancelText="取消"
-        >
-          {/* <Tooltip title="添加标签"> */}
+    {!isDir && (
+      <Col span={3}>
+        <Space wrap>
+          <Popconfirm
+            title="添加标签"
+            icon={null}
+            description={
+              <TagFilter initValues={tagStoreMap[id]} callback={values => {
+                // 设置标签
+                onTagSelect(values);
+              }} />
+            }
+            onConfirm={() => addTag(id, label)}
+            onCancel={closeAdd}
+            // onOpenChange={handleAddTagOpenChange}
+            onPopupClick={e => e.stopPropagation()}
+            okText="确定"
+            cancelText="取消"
+          >
+            {/* <Tooltip title="添加标签"> */}
             <Button shape="circle" icon={<TagOutlined />} onClick={(e) => handleAddTag(e)} />
-          {/* </Tooltip> */}
-        </Popconfirm>
-      </Space>
-    </Col>
+            {/* </Tooltip> */}
+          </Popconfirm>
+        </Space>
+      </Col>
+    )}
   </Row>
 }
 

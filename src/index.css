@@ -10,3 +10,9 @@
 .ml-4 {
   margin-left: 4px;
 }
+
+.flex-xy-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}

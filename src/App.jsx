@@ -1,133 +1,68 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState } from 'react'
 
-import { Layout, Menu, Segmented, Empty, Row, Col, Badge } from 'antd';
+import { Layout, Segmented } from 'antd';
 
 import './App.css';
-import MenuItem from './components/MenuItem';
+
+import BookmarkMenu from './components/Menu';
 import ToolBar from './components/ToolBar';
 
-import { getTagForBookmark } from './utils';
-
-const handleRedirect = url => {
-  // 获取当前活动的标签页
-  chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-    if (tabs.length > 0) {
-      const currentTab = tabs[0];
-
-      // 使用chrome.tabs.update方法更新标签页的URL
-      chrome.tabs.update(currentTab.id, { url }, function (updatedTab) {
-        if (chrome.runtime.lastError) {
-          // 处理更新标签页失败的情况
-          console.error(chrome.runtime.lastError);
-        } else {
-          // 标签页已成功更新到新的URL
-          console.log("标签页已重定向到新的URL: " + updatedTab.url);
-        }
-      });
-    }
-  });
-}
+import { getBookmarkList, getSegmentedOptions, getStorageTagForBookmark, buildMenuItem, removeTagForBookmark } from './utils';
 
 function App() {
-  const [treeRoot, setTreeRoot] = useState([]);
-  const [list, setList] = useState([]);
+  const [bookmarkList, setBookmarkList] = useState([]);
+  const [currentMenuList, setCurrentMenuList] = useState([]);
+  const [segmentedOptions, setSegmentedOptions] = useState([]);
+  const [storageTagForBookmark, setStorageTagForBookmark] = useState({});
   const [search, setSearch] = useState();
   const [searchTag, setSearchTag] = useState([]);
-  const [segmentedOptions, setsegmentedOptions] = useState([]);
-  const [segmentedValue, setSegmentedValue] = useState({});
-  const [tagStoreMap, setTagStoreMap] = useState({});
+  const [segmentedValue, setSegmentedValue] = useState();
 
-  const filteredList = useMemo(() => {
-    let result = list;
+  const getMenuItems = value => {
+    return buildMenuItem((value ? bookmarkList.find(item => +item.id === +value)?.children : bookmarkList[0]?.children) || [], storageTagForBookmark, onAfterAddTags);
+  }
 
-    if (search) {
-      result = list.filter(item => `${item.name} ${item.key} ${item.url}`.toLocaleLowerCase().indexOf(search.toLocaleLowerCase()) > -1);
-    }
-
-    if (searchTag && searchTag.length) {
-      result = result.filter(item => searchTag.some(tag => (tagStoreMap[item.key] || []).includes(tag)));
-    }
-
-    return result;
-  }, [list, search, searchTag, tagStoreMap]);
-
-  const buildMeniItem = option => {
-    return option.map(item => {
-      return getItem(item.title, item.id, item.url);
-    })
+  const onAfterAddTags = () => {
+    // 刷新列表
+    initList();
   }
 
   const onSegmentChange = value => {
     setSegmentedValue(value);
+
+    // 在书签列表里通过id反查对应的列表
+    setCurrentMenuList(getMenuItems(value));
+
     chrome.runtime.sendMessage({
       currentSegment: value,
       options: segmentedOptions
     });
-    setList(buildMeniItem(segmentedOptions.find(option => option.value === value)?.children || []));
   }
 
-  const handleMenuClick = (e) => {
-    const clickedItem = list.find(item => item.key === e.key);
-    chrome.runtime.sendMessage({
-      menuCLickKey: e.key,
-      clickedItem
+  const initList = () => {
+    // 1. 获取书签列表
+    getBookmarkList((root) => {
+      setBookmarkList(root);
+      // 2. 设置分段器参数
+      const options = getSegmentedOptions(root) || [];
+      setSegmentedOptions(options);
+      setSegmentedValue(segmentedValue || options[0]?.value || {});
     });
 
-    // 跳转链接
-    if (clickedItem && clickedItem.url) {
-      handleRedirect(clickedItem.url);
-    }
-  }
-
-  const getItem = (label, id, url, icon, children, type) => {
-    return {
-      key: id,
-      icon,
-      children,
-      name: label,
-      label: <MenuItem id={id} label={label} tagStoreMap={tagStoreMap} callback={() => init()} />,
-      type,
-      url
-    };
-  }
-
-  const init = () => {
-    setList(buildMeniItem(treeRoot[0]?.children || []));
+    // 3. 获取本地存储标签
+    getStorageTagForBookmark(root => {
+      setStorageTagForBookmark(root || {});
+    });
   }
 
   useEffect(() => {
-    chrome.bookmarks.getTree(function (bookmarkTreeNodes) {
-      chrome.runtime.sendMessage({
-        bookmarkTreeNodes
-      });
-
-      const root = (bookmarkTreeNodes || []).find(node => node.id === '0')?.children || (bookmarkTreeNodes || [])[0] || [];
-
-      const options = root.map(item => {
-        return {
-          label: <div>
-            <Badge count={item.children?.length || 0} size="small">
-              {item.title}
-            </Badge>
-          </div>,
-          value: item.id,
-          children: item.children
-        }
-      });
-      setsegmentedOptions(options);
-      setSegmentedValue(options[0]?.value);
-      setTreeRoot(root);
-    });
-
-    getTagForBookmark(item => {
-      setTagStoreMap(item ? item['chrome-bookmark'] || {} : {})
-    });
-  }, [tagStoreMap]);
+    setCurrentMenuList(getMenuItems());
+  }, [bookmarkList, storageTagForBookmark]);
 
   useEffect(() => {
-    // 属性刷新时，重置状态
-    init();
-  }, [treeRoot]);
+    // removeTagForBookmark()
+    initList();
+  }, []);
 
   return (
     <>
@@ -135,18 +70,7 @@ function App() {
         <ToolBar onSearch={setSearch} onTagSearch={setSearchTag} />
         <Segmented className="segmented" options={segmentedOptions} value={segmentedValue} onChange={onSegmentChange} />
 
-        <Row className='list-row'>
-          <Col className='list-col'>
-            {list && list.length ?
-              <Menu
-                onClick={handleMenuClick}
-                mode="inline"
-                items={filteredList}
-              /> : (
-                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
-              )}
-          </Col>
-        </Row>
+        <BookmarkMenu list={currentMenuList} search={search} searchTag={searchTag} tagStoreMap={storageTagForBookmark} />
       </Layout>
     </>
   )
