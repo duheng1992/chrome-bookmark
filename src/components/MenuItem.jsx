@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { HappyProvider } from '@ant-design/happy-work-theme';
 import { Col, Row, Button, Space, Popconfirm, Tag } from 'antd';
 import { TagOutlined } from '@ant-design/icons';
 
@@ -42,7 +43,7 @@ function MenuItem({ id, label, tagStoreMap = {}, isDir, callback }) {
 
   useEffect(() => {
     // 当存储变化时，再更新列表
-    chrome.storage.onChanged.addListener(function() {  
+    chrome.storage.onChanged.addListener(function () {
       // alert(JSON.stringify(changes))
       callback && callback();
     })
@@ -60,26 +61,29 @@ function MenuItem({ id, label, tagStoreMap = {}, isDir, callback }) {
     {!isDir && (
       <Col span={3}>
         <Space wrap>
-          <Popconfirm
-            title="添加标签"
-            icon={null}
-            description={
-              <TagFilter initValues={tagStoreMap[id]} callback={values => {
-                // 设置标签
-                onTagSelect(values);
-              }} />
-            }
-            onConfirm={() => addTag(id, label)}
-            onCancel={closeAdd}
-            // onOpenChange={handleAddTagOpenChange}
-            onPopupClick={e => e.stopPropagation()}
-            okText="确定"
-            cancelText="取消"
-          >
-            {/* <Tooltip title="添加标签"> */}
-            <Button shape="circle" icon={<TagOutlined />} onClick={(e) => handleAddTag(e)} />
-            {/* </Tooltip> */}
-          </Popconfirm>
+          <HappyProvider>
+
+            <Popconfirm
+              title="添加标签"
+              icon={null}
+              description={
+                <TagFilter initValues={tagStoreMap[id]} callback={values => {
+                  // 设置标签
+                  onTagSelect(values);
+                }} />
+              }
+              onConfirm={() => addTag(id, label)}
+              onCancel={closeAdd}
+              // onOpenChange={handleAddTagOpenChange}
+              onPopupClick={e => e.stopPropagation()}
+              okText="确定"
+              cancelText="取消"
+            >
+              {/* <Tooltip title="添加标签"> */}
+              <Button shape="circle" icon={<TagOutlined />} onClick={(e) => handleAddTag(e)} />
+              {/* </Tooltip> */}
+            </Popconfirm>
+          </HappyProvider>
         </Space>
       </Col>
     )}
