@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-import { Layout, Segmented } from 'antd';
+import { Layout, Segmented, ConfigProvider, theme } from 'antd';
 
 import './App.css';
 
@@ -10,6 +10,7 @@ import ToolBar from './components/ToolBar';
 import { getBookmarkList, getSegmentedOptions, getStorageTagForBookmark, buildMenuItem, removeTagForBookmark } from './utils';
 
 function App() {
+  const [currentTheme, setTheme] = useState('light');
   const [bookmarkList, setBookmarkList] = useState([]);
   const [currentMenuList, setCurrentMenuList] = useState([]);
   const [segmentedOptions, setSegmentedOptions] = useState([]);
@@ -62,17 +63,33 @@ function App() {
   useEffect(() => {
     // removeTagForBookmark()
     initList();
+
+    // 获取当前系统的主题色  
+    // chrome.windows.getCurrent(function (window) {
+    //   const themeColor = window.themeColor;
+
+    //   // 更新插件的样式，使用获取到的主题色  
+    //   alert(JSON.stringify(window))
+    // });
+
+    // // 监听来自背景脚本的主题色消息  
+    // chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
+    //   if (message.themeColor) {
+    //     // 更新插件的样式，使用接收到的主题色  
+    //     alert(message.themeColor)
+    //   }
+    // });
   }, []);
 
   return (
-    <>
+    <ConfigProvider theme={{ algorithm: currentTheme === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm }}>
       <Layout className="container">
-        <ToolBar onSearch={setSearch} onTagSearch={setSearchTag} />
+        <ToolBar onSearch={setSearch} onTagSearch={setSearchTag} onThemeChange={checked => setTheme(checked ? 'light' : 'dark')} />
         <Segmented className="segmented" options={segmentedOptions} value={segmentedValue} onChange={onSegmentChange} />
 
         <BookmarkMenu list={currentMenuList} search={search} searchTag={searchTag} tagStoreMap={storageTagForBookmark} />
       </Layout>
-    </>
+    </ConfigProvider>
   )
 }
 

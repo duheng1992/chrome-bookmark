@@ -14,3 +14,7 @@
     max-height: 600px;
     overflow-y: auto;
 }
+
+.ant-switch-inner {
+    fill: white;
+}
