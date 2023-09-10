@@ -15,6 +15,7 @@
     overflow-y: auto;
 }
 
-.ant-switch-inner {
-    fill: white;
-}
+/* .ant-switch-inner > .ant-switch-inner-checked {
+    height: 40px;
+    line-height: 20px;
+} */

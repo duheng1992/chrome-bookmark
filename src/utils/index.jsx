@@ -1,13 +1,15 @@
 import { Badge } from 'antd';
 
 import MenuItem from '../components/MenuItem';
+import { sendMessageToBackground } from './message';
 
 // 当用户添加标签时，使用chrome.storage保存标签信息
 export const saveTagForBookmark = (bookmarkId, tags) => {
   getStorageTagForBookmark(exists => {
     const newTags = Object.assign({}, exists, { [bookmarkId]: tags });
     chrome.storage.sync.set({ 'chrome-bookmark': newTags }, function () {
-      chrome.runtime.sendMessage({
+      sendMessageToBackground({
+        action: 'saveTagForBookmark',
         addTag: { bookmarkId, newTags }
       });
     });
@@ -23,7 +25,8 @@ export const removeTagForBookmark = () => {
 export const getStorageTagForBookmark = callback => {
   chrome.storage.sync.get(null, function (items) {
     // items 包含了所有存储在storage中的键值对
-    chrome.runtime.sendMessage({
+    sendMessageToBackground({
+      action: 'getStorageTagForBookmark',
       getTags: { ...items }
     });
 
@@ -53,7 +56,8 @@ export const handleRedirect = url => {
 
 export const getBookmarkList = (callback) => {
   chrome.bookmarks.getTree(function (bookmarkTreeNodes) {
-    chrome.runtime.sendMessage({
+    sendMessageToBackground({
+      action: 'getBookmarkList',
       bookmarkTreeNodes
     });
 

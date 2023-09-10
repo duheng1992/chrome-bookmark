@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, memo, useCallback } from 'react'
 import { Space, Tag } from 'antd';
 import { tagLevelColorMap, tagLevel } from '../utils/const';
 
@@ -7,14 +7,14 @@ const { CheckableTag } = Tag;
 function TagFilter({ callback, initValues }) {
   const [selectedTags, setSelectedTags] = useState(initValues || []);
 
-  const handleTagChange = (tag, checked) => {
+  const handleTagChange = useCallback((tag, checked) => {
     const nextSelectedTags = checked
       ? [...selectedTags, tag]
       : selectedTags.filter((t) => t !== tag);
     setSelectedTags(nextSelectedTags);
 
     callback && callback(nextSelectedTags);
-  };
+  }, [selectedTags]);
 
   return <Space size={1} wrap align="center" className='ml-4'>
     标签：
@@ -33,4 +33,4 @@ function TagFilter({ callback, initValues }) {
 
 }
 
-export default TagFilter;
+export default memo(TagFilter);

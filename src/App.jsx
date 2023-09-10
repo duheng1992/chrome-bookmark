@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 
 import { Layout, Segmented, ConfigProvider, theme } from 'antd';
 
@@ -8,9 +8,11 @@ import BookmarkMenu from './components/Menu';
 import ToolBar from './components/ToolBar';
 
 import { getBookmarkList, getSegmentedOptions, getStorageTagForBookmark, buildMenuItem, removeTagForBookmark } from './utils';
+import { THEME } from './utils/const';
+import { sendMessageToBackground } from './utils/message';
 
 function App() {
-  const [currentTheme, setTheme] = useState('light');
+  const [currentTheme, setTheme] = useState(THEME.LIGHT);
   const [bookmarkList, setBookmarkList] = useState([]);
   const [currentMenuList, setCurrentMenuList] = useState([]);
   const [segmentedOptions, setSegmentedOptions] = useState([]);
@@ -19,28 +21,33 @@ function App() {
   const [searchTag, setSearchTag] = useState([]);
   const [segmentedValue, setSegmentedValue] = useState();
 
-  const getMenuItems = value => {
+  const getMenuItems = useCallback(value => {
     return buildMenuItem((value ? bookmarkList.find(item => +item.id === +value)?.children : bookmarkList[0]?.children) || [], storageTagForBookmark, onAfterAddTags);
-  }
+  }, [bookmarkList, storageTagForBookmark]);
 
-  const onAfterAddTags = () => {
+  const onAfterAddTags = useCallback(() => {
     // 刷新列表
     initList();
-  }
+  }, []);
 
-  const onSegmentChange = value => {
+  const onSegmentChange = useCallback(value => {
     setSegmentedValue(value);
 
     // 在书签列表里通过id反查对应的列表
     setCurrentMenuList(getMenuItems(value));
 
-    chrome.runtime.sendMessage({
+    sendMessageToBackground({
+      action: 'onSegmentChange',
       currentSegment: value,
       options: segmentedOptions
     });
-  }
+  }, [segmentedOptions]);
 
-  const initList = () => {
+  const onThemeChange = useCallback(theme => {
+    setTheme(theme)
+  }, []);
+
+  const initList = useCallback(() => {
     // 1. 获取书签列表
     getBookmarkList((root) => {
       setBookmarkList(root);
@@ -54,7 +61,7 @@ function App() {
     getStorageTagForBookmark(root => {
       setStorageTagForBookmark(root || {});
     });
-  }
+  }, [segmentedValue]);
 
   useEffect(() => {
     setCurrentMenuList(getMenuItems());
@@ -63,30 +70,15 @@ function App() {
   useEffect(() => {
     // removeTagForBookmark()
     initList();
-
-    // 获取当前系统的主题色  
-    // chrome.windows.getCurrent(function (window) {
-    //   const themeColor = window.themeColor;
-
-    //   // 更新插件的样式，使用获取到的主题色  
-    //   alert(JSON.stringify(window))
-    // });
-
-    // // 监听来自背景脚本的主题色消息  
-    // chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
-    //   if (message.themeColor) {
-    //     // 更新插件的样式，使用接收到的主题色  
-    //     alert(message.themeColor)
-    //   }
-    // });
+    // 根据系统初始化主题
+    setTheme(window.matchMedia('(prefers-color-scheme: dark)').matches ? THEME.DARK : THEME.LIGHT);
   }, []);
 
   return (
-    <ConfigProvider theme={{ algorithm: currentTheme === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm }}>
+    <ConfigProvider theme={{ algorithm: currentTheme === THEME.DARK ? theme.darkAlgorithm : theme.defaultAlgorithm }}>
       <Layout className="container">
-        <ToolBar onSearch={setSearch} onTagSearch={setSearchTag} onThemeChange={checked => setTheme(checked ? 'light' : 'dark')} />
+        <ToolBar onSearch={setSearch} onTagSearch={setSearchTag} theme={currentTheme} onThemeChange={onThemeChange} />
         <Segmented className="segmented" options={segmentedOptions} value={segmentedValue} onChange={onSegmentChange} />
-
         <BookmarkMenu list={currentMenuList} search={search} searchTag={searchTag} tagStoreMap={storageTagForBookmark} />
       </Layout>
     </ConfigProvider>

@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, memo, useCallback } from 'react'
 import { Menu, Empty, Row, Col } from 'antd';
 
 import { handleRedirect } from '../utils';
+import { sendMessageToBackground } from '../utils/message';
 
 /**
  * 书签菜单列表
@@ -11,7 +12,7 @@ import { handleRedirect } from '../utils';
 function BookmarkMenu({ list, search, searchTag, tagStoreMap }) {
   const [filteredList, setFilteredList] = useState([]);
 
-  const handleMenuClick = e => {
+  const handleMenuClick = useCallback(e => {
     let clickedItem;
     const findStack = [...list];
 
@@ -28,7 +29,8 @@ function BookmarkMenu({ list, search, searchTag, tagStoreMap }) {
       }
     }
 
-    chrome.runtime.sendMessage({
+    sendMessageToBackground({
+      action: 'handleMenuClick',
       menuCLickKey: e.key,
       clickedItem
     });
@@ -37,7 +39,7 @@ function BookmarkMenu({ list, search, searchTag, tagStoreMap }) {
     if (clickedItem && clickedItem.url) {
       handleRedirect(clickedItem.url);
     }
-  }
+  }, [list]);
 
   useEffect(() => {
     let wipFiltered = list;
@@ -71,4 +73,4 @@ function BookmarkMenu({ list, search, searchTag, tagStoreMap }) {
   )
 }
 
-export default BookmarkMenu;
+export default memo(BookmarkMenu);

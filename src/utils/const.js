@@ -19,3 +19,8 @@ export const tagLevelColorMap = {
   'blue': '蓝色',
   'purple': '紫色',
 }
+
+export const THEME = {
+  DARK: 'dark',
+  LIGHT: 'light'
+}

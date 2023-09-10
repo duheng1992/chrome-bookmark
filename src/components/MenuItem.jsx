@@ -62,7 +62,6 @@ function MenuItem({ id, label, tagStoreMap = {}, isDir, callback }) {
       <Col span={3}>
         <Space wrap>
           <HappyProvider>
-
             <Popconfirm
               title="添加标签"
               icon={null}
